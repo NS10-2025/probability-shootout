@@ -1,1 +1,397 @@
-<!doctype html><html><head><meta charset='utf-8'><title>Probability Shootout</title></head><body><h1>Missing File</h1></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Caitlin Clark Probability Shootout 🏀</title>
+<style>
+  :root{
+    --bg:#0f172a;
+    --card:#111827;
+    --muted:#94a3b8;
+    --text:#e5e7eb;
+    --accent:#fbbf24;
+    --accent-2:#60a5fa;
+    --good:#34d399;
+    --bad:#f59e0b;
+    --border:#1f2937;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    background: radial-gradient(900px 600px at 10% 10%, #0b1229 0%, #0a1023 40%, #090f20 78%, #070c1a 100%);
+    color: var(--text);
+    line-height:1.45;
+  }
+  .wrap{max-width:1100px; margin:24px auto; padding:16px;}
+  header{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px;}
+  h1{font-size:1.6rem; margin:0}
+  .muted{color:var(--muted)}
+  .controls{display:flex; gap:8px; flex-wrap:wrap}
+  select, button{
+    background:#0b1224;
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:8px 10px;
+    border-radius:10px;
+    font-weight:600;
+  }
+  button.primary{background: linear-gradient(180deg, #1e293b 0%, #111827 100%);}
+  button:hover{border-color:#334155; cursor:pointer}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  @media (max-width:900px){ .grid{grid-template-columns:1fr} }
+  .card{background: rgba(17,24,39,.75); border:1px solid var(--border); border-radius:16px; box-shadow: 0 10px 30px rgba(0,0,0,.3)}
+  .card h2{font-size:1.1rem; margin:0; padding:14px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px}
+  .card .content{padding:16px}
+  .board{display:grid; grid-template-columns: repeat(6, 52px); gap:10px; padding:8px; background:rgba(2,6,23,.4); border:1px solid var(--border); border-radius:16px; justify-content:center}
+  .tile{position:relative; width:52px; height:52px; border-radius:12px; background:#0b1224; border:1px solid #1e293b; display:flex; align-items:center; justify-content:center; font-size:11px; color:#94a3b8}
+  .tile.reached{background: linear-gradient(180deg, rgba(251,191,36,.08) 0%, rgba(14,23,42,.6) 100%); border-color:#334155}
+  .badge{position:absolute; width:22px; height:22px; border-radius:99px; display:flex; align-items:center; justify-content:center; font-size:11px; color:#fff; box-shadow:0 4px 10px rgba(0,0,0,.35)}
+  .you{left:-8px; top:-8px; background: var(--accent-2)}
+  .cc{right:-8px; bottom:-8px; background: var(--accent)}
+  .rows{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .progress{height:10px; background:#0b1224; border:1px solid #1e293b; border-radius:999px; overflow:hidden}
+  .bar{height:100%; width:0%; background:linear-gradient(90deg, #60a5fa, #3b82f6); transition:width .3s ease}
+  .bar.cc{background:linear-gradient(90deg, #fbbf24, #f59e0b)}
+  .kpi{display:flex; justify-content:space-between; gap:16px; font-size:.85rem}
+  .pill{display:inline-flex; gap:6px; align-items:center; background:#0b1224; border:1px solid var(--border); padding:6px 10px; border-radius:999px}
+  .q-choices{display:grid; gap:8px; margin-top:8px}
+  .choice{border:1px solid var(--border); background:#0b1224; padding:10px; border-radius:12px; display:flex; gap:8px; align-items:center}
+  .choice input{accent-color:#60a5fa}
+  .choice.selected{border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.25)}
+  .flex{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .feedback{padding:12px; border-radius:12px; border:1px solid; margin-top:8px}
+  .good{background: rgba(52,211,153,.12); border-color: rgba(52,211,153,.35)}
+  .bad{background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.4)}
+  footer{margin-top:16px; font-size:.8rem}
+  .finish{padding:10px 12px; border-radius:12px; border:1px solid rgba(52,211,153,.35); background:rgba(52,211,153,.12); font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Caitlin Clark Probability Shootout</h1>
+      <div class="muted">30-space board. Answer correctly to move a random number of spaces. First to finish wins.</div>
+    </div>
+    <div class="controls">
+      <label class="pill">Difficulty&nbsp;
+        <select id="difficulty">
+          <option value="rookie">Rookie</option>
+          <option value="pro" selected>Pro</option>
+          <option value="all-star">All-Star</option>
+        </select>
+      </label>
+      <label class="pill">Move Range&nbsp;
+        <select id="range">
+          <option value="4">2–4</option>
+          <option value="6" selected>2–6</option>
+          <option value="8">2–8</option>
+        </select>
+      </label>
+      <button id="reset" class="primary">Reset</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <h2>🎲 Game Board</h2>
+      <div class="content">
+        <div id="board" class="board"></div>
+        <div class="rows" style="margin-top:12px">
+          <div>
+            <div class="kpi"><span>You</span><span id="youPosText">0 / 30</span></div>
+            <div class="progress"><div id="youBar" class="bar"></div></div>
+          </div>
+          <div>
+            <div class="kpi"><span>Caitlin Clark</span><span id="ccPosText">0 / 30</span></div>
+            <div class="progress"><div id="ccBar" class="bar cc"></div></div>
+          </div>
+        </div>
+        <div id="winner" style="margin-top:10px; display:none" class="finish">You win!</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>❓ Your Turn</h2>
+      <div class="content">
+        <div class="muted">Topic: <span id="topic" style="color:#e2e8f0"></span></div>
+        <div id="stem" style="font-weight:700; margin-top:6px"></div>
+        <div id="choices" class="q-choices"></div>
+        <div class="flex" style="margin-top:8px">
+          <button id="shoot" class="primary">Shoot</button>
+          <button id="newQ">New Question</button>
+        </div>
+        <div id="feedback" class="feedback good" style="display:none"></div>
+        <div id="explain" class="muted" style="margin-top:6px"></div>
+        <div class="muted" style="margin-top:8px">Rules: Correct ⇒ move random between 2 and <span id="rngMaxText">6</span>. Wrong ⇒ no move. Turns alternate. First to reach 30 wins.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="muted">
+    Designed for college freshmen: simple probability, independence, conditional probability, counting, and descriptive statistics.
+  </footer>
+</div>
+
+<script>
+(function(){
+  const BOARD_LEN = 30;
+  const boardEl = document.getElementById('board');
+  const youBar = document.getElementById('youBar');
+  const ccBar = document.getElementById('ccBar');
+  const youPosText = document.getElementById('youPosText');
+  const ccPosText = document.getElementById('ccPosText');
+  const winnerEl = document.getElementById('winner');
+  const topicEl = document.getElementById('topic');
+  const stemEl = document.getElementById('stem');
+  const choicesEl = document.getElementById('choices');
+  const shootBtn = document.getElementById('shoot');
+  const newQBtn = document.getElementById('newQ');
+  const feedbackEl = document.getElementById('feedback');
+  const explainEl = document.getElementById('explain');
+  const rngMaxText = document.getElementById('rngMaxText');
+  const diffSel = document.getElementById('difficulty');
+  const rangeSel = document.getElementById('range');
+  const resetBtn = document.getElementById('reset');
+
+  let youPos = 0;
+  let ccPos = 0;
+  let turn = 'you';
+  let rngMax = parseInt(rangeSel.value, 10);
+  let q = makeQuestion();
+  let selected = null;
+  let winner = null;
+
+  const ccAccuracies = { 'rookie': 0.55, 'pro': 0.70, 'all-star': 0.82 };
+
+  function randInt(min, max){ return Math.floor(Math.random() * (max - min + 1)) + min; }
+  function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i], a[j]]=[a[j], a[i]];} return a; }
+
+  function genDieProbability(){
+    const target = randInt(1,6);
+    const stem = `You roll a fair six-sided die. What is P(rolling a ${target})?`;
+    const correct = '1/6';
+    const wrongs = shuffle(['1/5','1/3','1/4']);
+    const choices = shuffle([correct, ...wrongs]);
+    return { stem, choices, answerIndex: choices.indexOf(correct), explanation: 'For a fair d6, each face has probability 1/6.', topic:'Single-event probability (die)' };
+  }
+  function genCoinProbability(){
+    const flips = [1,2,3][randInt(0,2)];
+    const stem = `You flip a fair coin ${flips} ${flips===1?'time':'times'}. What is P(getting all heads)?`;
+    const correct = `1/${2**flips}`;
+    const wrongs = shuffle(['1/2', `${flips}/${2**flips}`, `1/${flips+1}`]);
+    const choices = shuffle([correct, ...wrongs]);
+    return { stem, choices, answerIndex: choices.indexOf(correct), explanation: `Independent flips: (1/2)^${flips}.`, topic:'Independent events (coin flips)' };
+  }
+  function genDeckProbability(){
+    const suit = ['hearts','spades','diamonds','clubs'][randInt(0,3)];
+    const stem = `From a standard 52-card deck, what is P(drawing a ${suit} on one draw)?`;
+    const correct = '13/52';
+    const wrongs = shuffle(['1/52','4/52','26/52']);
+    const choices = shuffle([correct, ...wrongs]);
+    return { stem, choices, answerIndex: choices.indexOf(correct), explanation: 'There are 13 cards per suit out of 52 total: 13/52 = 1/4.', topic:'Single-event probability (cards)' };
+  }
+  function genMean(){
+    const a=randInt(2,9), b=randInt(2,9), c=randInt(2,9), d=randInt(2,9);
+    const nums=[a,b,c,d], sum=nums.reduce((s,x)=>s+x,0), mean=(sum/4).toFixed(2);
+    const stem=`Find the mean of the dataset: [${nums.join(', ')}]`;
+    const correct=mean;
+    const wrongs=shuffle([(sum/3).toFixed(2), String(Math.max(...nums)), String(Math.min(...nums))]);
+    const choices=shuffle([correct, ...wrongs]);
+    return { stem, choices, answerIndex: choices.indexOf(correct), explanation:`Mean = sum / n = ${sum} / 4 = ${mean}.`, topic:'Descriptive stats: mean' };
+  }
+  function genMedian(){
+    const arr=shuffle([randInt(1,9),randInt(1,9),randInt(1,9),randInt(1,9),randInt(1,9)]);
+    const sorted=[...arr].sort((x,y)=>x-y); const median=sorted[2];
+    const stem=`What is the median of [${arr.join(', ')}]?`;
+    const correct=String(median);
+    const wrongs=shuffle([String(sorted[1]), String(sorted[3]), String(Math.round(arr.reduce((s,x)=>s+x,0)/arr.length))]);
+    const choices=shuffle([correct, ...wrongs]);
+    return { stem, choices, answerIndex: choices.indexOf(correct), explanation:`Order the values (${sorted.join(', ')}); middle of 5 is the 3rd.`, topic:'Descriptive stats: median' };
+  }
+  function genMode(){
+    const base=randInt(2,6);
+    const arr=[base, base, randInt(1,9), randInt(1,9), randInt(1,9)];
+    const stem=`What is the mode of [${arr.join(', ')}]?`;
+    const correct=String(base);
+    const wrongs=shuffle([String(Math.max(...arr)), String(Math.min(...arr)), 'No mode']);
+    const choices=shuffle([correct, ...wrongs]);
+    return { stem, choices, answerIndex: choices.indexOf(correct), explanation:`Mode is the most frequent value → ${base}.`, topic:'Descriptive stats: mode' };
+  }
+  function genIndependentEvents(){
+    const goodA=randInt(2,5), totalA=randInt(6,9);
+    const goodB=randInt(2,5), totalB=randInt(6,9);
+    const stem=`Box A: ${goodA} red & ${totalA-goodA} blue. Box B: ${goodB} red & ${totalB-goodB} blue. P(both red)?`;
+    const p=(goodA/totalA)*(goodB/totalB); const correct=p.toFixed(4);
+    const wrongs=shuffle([(goodA/totalA).toFixed(4), (goodB/totalB).toFixed(4), (1-p).toFixed(4)]);
+    const choices=shuffle([correct, ...wrongs]);
+    return { stem, choices, answerIndex: choices.indexOf(correct), explanation:`Independent draws: (${goodA}/${totalA})×(${goodB}/${totalB}) = ${correct}.`, topic:'Independent events (multiply rule)' };
+  }
+  function genConditionalSimple(){
+    const a=randInt(8,15), b=randInt(8,15), c=randInt(8,15), d=randInt(8,15);
+    const stem=`Group T (tutor): ${a+b} students, ${a} pass. Group N: ${c+d}, ${c} pass. P(pass | T)?`;
+    const correct=(a/(a+b)).toFixed(3);
+    const wrongs=shuffle([(c/(c+d)).toFixed(3), ((a+c)/(a+b+c+d)).toFixed(3), (a/(a+c)).toFixed(3)]);
+    const choices=shuffle([correct, ...wrongs]);
+    return { stem, choices, answerIndex: choices.indexOf(correct), explanation:`P(pass | T) = pass in T / total in T = ${a}/(${a}+${b}) = ${correct}.`, topic:'Conditional probability' };
+  }
+  function genCombinations(){
+    const n=randInt(5,8), r=randInt(2, Math.min(4, n-1));
+    function fact(x){return x<=1?1:x*fact(x-1)}
+    const comb = fact(n)/(fact(r)*fact(n-r));
+    const stem = `How many combinations of ${r} players from ${n}? (order doesn't matter)`;
+    const correct = String(comb);
+    const wrongs = shuffle([String(n**r), String(n*(n-1)), String(fact(n))]);
+    const choices = shuffle([correct, ...wrongs]);
+    return { stem, choices, answerIndex: choices.indexOf(correct), explanation:'Use nCr = n! / (r!(n−r)!).', topic:'Counting: combinations' };
+  }
+  function genExpectedValue(){
+    const p = (randInt(6,9)/10);
+    const stem = `A player makes a 2-point shot with probability ${p.toFixed(1)}. Expected value (points) of one shot?`;
+    const ev = (2*p).toFixed(2);
+    const correct = ev;
+    const wrongs = shuffle([p.toFixed(2), (2*(1-p)).toFixed(2), (1).toFixed(2)]);
+    const choices = shuffle([correct, ...wrongs]);
+    return { stem, choices, answerIndex: choices.indexOf(correct), explanation:`EV = 2×p + 0×(1−p) = ${ev}.`, topic:'Expected value (simple)' };
+  }
+
+  const generators = [genDieProbability, genCoinProbability, genDeckProbability, genMean, genMedian, genMode, genIndependentEvents, genConditionalSimple, genCombinations, genExpectedValue];
+  function makeQuestion(){ return generators[randInt(0, generators.length-1)](); }
+
+  function renderBoard(){
+    const BOARD_LEN = 30;
+    boardEl.innerHTML = '';
+    for(let i=0;i<=BOARD_LEN;i++){
+      const tile = document.createElement('div');
+      tile.className = 'tile' + ((i<=Math.max(youPos, ccPos))?' reached':''); 
+      tile.textContent = i;
+      if(youPos===i){
+        const b=document.createElement('div'); b.className='badge you'; b.title='You'; b.textContent='Y'; tile.appendChild(b);
+      }
+      if(ccPos===i){
+        const b=document.createElement('div'); b.className='badge cc'; b.title='Caitlin Clark'; b.textContent='C'; tile.appendChild(b);
+      }
+      boardEl.appendChild(tile);
+    }
+    youBar.style.width = (youPos/30*100)+'%';
+    ccBar.style.width = (ccPos/30*100)+'%';
+    youPosText.textContent = `${youPos} / 30`;
+    ccPosText.textContent = `${ccPos} / 30`;
+  }
+
+  function showWinner(who){
+    winner = who;
+    winnerEl.style.display = 'block';
+    winnerEl.textContent = (who==='you') ? 'You win!' : 'Caitlin Clark wins this one.';
+  }
+
+  function updateQ(){
+    topicEl.textContent = q.topic;
+    stemEl.textContent = q.stem;
+    choicesEl.innerHTML = '';
+    q.choices.forEach((c, idx)=>{
+      const lbl = document.createElement('label');
+      lbl.className = 'choice';
+      const radio = document.createElement('input');
+      radio.type='radio'; radio.name='choice';
+      radio.addEventListener('change', ()=>{ selected = idx; document.querySelectorAll('.choice').forEach(el=>el.classList.remove('selected')); lbl.classList.add('selected'); });
+      lbl.appendChild(radio);
+      const span = document.createElement('span'); span.textContent = c; lbl.appendChild(span);
+      choicesEl.appendChild(lbl);
+    });
+  }
+
+  function reset(){
+    youPos=0; ccPos=0; turn='you'; rngMax = parseInt(rangeSel.value, 10); q = makeQuestion(); selected=null; winner=null;
+    rngMaxText.textContent = rngMax;
+    feedbackEl.style.display='none'; feedbackEl.textContent=''; explainEl.textContent=''; winnerEl.style.display='none';
+    renderBoard(); updateQ();
+  }
+
+  function handleSubmit(){
+    if(turn!=='you' || winner!==null || selected===null) return;
+    const correct = selected === q.answerIndex;
+    const spaces = correct ? randInt(2, rngMax) : 0;
+    if(correct){
+      youPos = Math.min(30, youPos + spaces);
+      feedbackEl.className = 'feedback good';
+      feedbackEl.textContent = `Bucket! You advance ${spaces} space${spaces===1?'':'s'}.`;
+    } else {
+      feedbackEl.className = 'feedback bad';
+      feedbackEl.textContent = 'Miss. No movement this possession.';
+    }
+    feedbackEl.style.display='block';
+    explainEl.textContent = q.explanation;
+    renderBoard();
+    if(youPos >= 30){ showWinner('you'); return; }
+    turn='cc';
+    setTimeout(ccTurn, 850);
+  }
+
+  function ccTurn(){
+    if(winner!==null) return;
+    const acc = { 'rookie': 0.55, 'pro': 0.70, 'all-star': 0.82 }[diffSel.value];
+    const ccQ = makeQuestion();
+    const gotIt = Math.random() < acc;
+    const spaces = gotIt ? randInt(2, rngMax) : 0;
+    if(gotIt){
+      ccPos = Math.min(30, ccPos + spaces);
+      feedbackEl.className = 'feedback good';
+      feedbackEl.textContent = `Clark drains it and advances ${spaces}.`;
+      explainEl.textContent = `${ccQ.topic}: ${ccQ.explanation}`;
+    } else {
+      feedbackEl.className = 'feedback bad';
+      feedbackEl.textContent = 'Clark rims out. No movement.';
+      explainEl.textContent = `${ccQ.topic}: Answered incorrectly.`;
+    }
+    feedbackEl.style.display='block';
+    renderBoard();
+    if(ccPos >= 30){ showWinner('cc'); return; }
+    turn='you';
+    q = makeQuestion();
+    selected=null;
+    updateQ();
+  }
+
+  const BOARD_LEN = 30;
+  function randInt(min, max){ return Math.floor(Math.random() * (max - min + 1)) + min; }
+  function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i], a[j]]=[a[j], a[i]];} return a; }
+
+  const boardEl = document.getElementById('board');
+  const youBar = document.getElementById('youBar');
+  const ccBar = document.getElementById('ccBar');
+  const youPosText = document.getElementById('youPosText');
+  const ccPosText = document.getElementById('ccPosText');
+  const winnerEl = document.getElementById('winner');
+  const topicEl = document.getElementById('topic');
+  const stemEl = document.getElementById('stem');
+  const choicesEl = document.getElementById('choices');
+  const shootBtn = document.getElementById('shoot');
+  const newQBtn = document.getElementById('newQ');
+  const feedbackEl = document.getElementById('feedback');
+  const explainEl = document.getElementById('explain');
+  const rngMaxText = document.getElementById('rngMaxText');
+  const diffSel = document.getElementById('difficulty');
+  const rangeSel = document.getElementById('range');
+  const resetBtn = document.getElementById('reset');
+
+  let youPos = 0;
+  let ccPos = 0;
+  let turn = 'you';
+  let rngMax = parseInt(rangeSel.value, 10);
+  let q = makeQuestion();
+  let selected = null;
+  let winner = null;
+
+  renderBoard();
+  updateQ();
+
+  shootBtn.addEventListener('click', handleSubmit);
+  newQBtn.addEventListener('click', ()=>{ q = makeQuestion(); selected=null; updateQ(); feedbackEl.style.display='none'; explainEl.textContent='New play drawn up. Try this one.'; });
+  rangeSel.addEventListener('change', ()=>{ rngMax = parseInt(rangeSel.value, 10); rngMaxText.textContent = rngMax; });
+  resetBtn.addEventListener('click', reset);
+})();</script>
+</body>
+</html>
